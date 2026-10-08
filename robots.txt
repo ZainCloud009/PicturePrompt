@@ -1,0 +1,16 @@
+# robots.txt for https://pictureprompt.world/
+User-agent: *
+Allow: /
+
+# Allow all major search engine crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Sitemap Location
+Sitemap: https://pictureprompt.world/sitemap.xml
