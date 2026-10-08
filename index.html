@@ -151,19 +151,19 @@
       </div>
 
       <div class="header-right">
-        <button id="customizerBtn" class="btn btn-outline" title="Custom Prompt Builder">
+        <button id="customizerBtn" class="btn btn-outline" title="Custom Prompt Builder" aria-label="Prompt Customizer">
           <i class="fa-solid fa-sliders"></i>
-          <span>Customizer</span>
+          <span class="btn-text">Customizer</span>
         </button>
 
-        <button id="favoritesBtn" class="btn btn-outline" title="View Saved Prompts">
+        <button id="favoritesBtn" class="btn btn-outline" title="View Saved Prompts" aria-label="Saved Prompts">
           <i class="fa-solid fa-bookmark"></i>
-          <span>Saved (<span id="savedCount">0</span>)</span>
+          <span class="btn-text">Saved</span> <span class="badge-saved-count">(<span id="savedCount">0</span>)</span>
         </button>
 
-        <button id="addPromptBtn" class="btn btn-primary">
+        <button id="addPromptBtn" class="btn btn-primary" title="Submit Prompt" aria-label="Add New Prompt">
           <i class="fa-solid fa-plus"></i>
-          <span>Add Prompt</span>
+          <span class="btn-text">Add Prompt</span>
         </button>
       </div>
     </div>
@@ -696,6 +696,11 @@
     <i class="fa-solid fa-circle-check toast-icon"></i>
     <span id="toastMessage">Prompt copied to clipboard!</span>
   </div>
+
+  <!-- Floating Back to Top Button for Mobile & Desktop -->
+  <button id="backToTopBtn" class="back-to-top" aria-label="Back to Top" title="Back to Top">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
 
   <script src="prompts_data.js"></script>
   <script src="app.js"></script>
