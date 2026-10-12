@@ -84,18 +84,22 @@ class PicturePromptApp {
     this.currentCategory = "all";
     this.currentModel = "all";
     this.searchQuery = "";
-    this.sortBy = "popular";
+    this.sortBy = "random";
     this.favorites = new Set();
     this.likedPrompts = new Set();
     this.showingOnlyFavorites = false;
     this.activeModalPrompt = null;
+    this._shuffledCache = null;
+    this._shuffledCacheKey = "";
 
     this.init();
   }
 
   init() {
+    this.initTheme();
     this.loadStateFromStorage();
     this.cacheDOMElements();
+    this.parseUrlParamsOnLoad();
     this.bindEvents();
     this.setupInfiniteScroll();
     this.applyFilterAndRender();
@@ -117,6 +121,15 @@ class PicturePromptApp {
     // Combine custom prompts on top
     this.allPrompts = [...customList, ...dataset];
 
+    // Ensure all prompts have a clean SEO slug
+    this.allPrompts.forEach((item) => {
+      if (!item.slug) {
+        const clean = (item.title || "prompt").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        const suffix = (item.id || "").replace(/[^a-z0-9]/g, "").slice(-7) || "prompt";
+        item.slug = `${clean}-${suffix}`;
+      }
+    });
+
     // Load favorites & likes
     const savedFavs = localStorage.getItem("pp_favorites");
     if (savedFavs) {
@@ -134,6 +147,50 @@ class PicturePromptApp {
       } catch (e) {
         this.likedPrompts = new Set();
       }
+    }
+  }
+
+  parseUrlParamsOnLoad() {
+    const params = new URLSearchParams(window.location.search);
+    const cat = params.get("category");
+    const search = params.get("search");
+    const saved = params.get("saved");
+
+    if (cat && cat !== "all") {
+      this.currentCategory = cat;
+    }
+
+    if (search) {
+      this.searchQuery = search.trim().toLowerCase();
+    }
+
+    if (saved === "true") {
+      this.showingOnlyFavorites = true;
+    }
+  }
+
+  initTheme() {
+    const savedTheme = localStorage.getItem("pp_theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    this.updateThemeIcon(savedTheme);
+
+    const themeBtn = document.getElementById("themeToggleBtn");
+    if (themeBtn) {
+      themeBtn.addEventListener("click", () => {
+        const current = document.documentElement.getAttribute("data-theme") || "light";
+        const next = current === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("pp_theme", next);
+        this.updateThemeIcon(next);
+        this.showToast(`Switched to ${next === "light" ? "Light" : "Dark"} mode`);
+      });
+    }
+  }
+
+  updateThemeIcon(theme) {
+    const icon = document.querySelector("#themeToggleBtn i");
+    if (icon) {
+      icon.className = theme === "light" ? "fa-solid fa-moon theme-icon" : "fa-solid fa-sun theme-icon";
     }
   }
 
@@ -260,6 +317,19 @@ class PicturePromptApp {
       this.applyFilterAndRender();
       this.scrollToGallery();
     });
+
+    // Top Navbar Saved Link
+    const navSavedLink = document.getElementById("navSavedLink");
+    if (navSavedLink) {
+      navSavedLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.showingOnlyFavorites = true;
+        this.favoritesBtn.classList.add("btn-primary");
+        this.favoritesBtn.classList.remove("btn-outline");
+        this.applyFilterAndRender();
+        this.scrollToGallery();
+      });
+    }
 
     // Customizer Scroll Button
     this.customizerBtn.addEventListener("click", () => {
@@ -456,10 +526,10 @@ class PicturePromptApp {
     this.currentCategory = "all";
     this.currentModel = "all";
     this.searchQuery = "";
-    this.sortBy = "popular";
+    this.sortBy = "random";
     this.showingOnlyFavorites = false;
     this.searchInput.value = "";
-    this.sortSelect.value = "popular";
+    this.sortSelect.value = "random";
 
     this.categoryNav.querySelectorAll(".cat-btn").forEach((b) => b.classList.remove("active"));
     document.querySelector('.cat-btn[data-category="all"]').classList.add("active");
@@ -474,53 +544,71 @@ class PicturePromptApp {
   }
 
   updateFavoritesCountBadge() {
-    this.savedCountEl.textContent = this.favorites.size;
+    if (this.savedCountEl) {
+      this.savedCountEl.textContent = this.favorites.size;
+    }
+    const navSaved = document.getElementById("savedCountNav");
+    if (navSaved) {
+      navSaved.textContent = this.favorites.size;
+    }
+  }
+
+  // Fisher-Yates shuffle array helper
+  shuffleArray(arr) {
+    const array = [...arr];
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
   }
 
   // Filter & Sorting Computation
   computeFilteredList() {
-    return this.allPrompts
-      .filter((item) => {
-        // Saved favorites filter
-        if (this.showingOnlyFavorites && !this.favorites.has(item.id)) {
-          return false;
-        }
+    let list = this.allPrompts.filter((item) => {
+      // Saved favorites filter
+      if (this.showingOnlyFavorites && !this.favorites.has(item.id)) {
+        return false;
+      }
 
-        // Category filter
-        if (this.currentCategory !== "all" && item.category !== this.currentCategory) {
-          return false;
-        }
+      // Category filter
+      if (this.currentCategory !== "all" && item.category !== this.currentCategory) {
+        return false;
+      }
 
-        // Model filter
-        if (this.currentModel !== "all" && item.model !== this.currentModel) {
-          return false;
-        }
+      // Model filter
+      if (this.currentModel !== "all" && item.model !== this.currentModel) {
+        return false;
+      }
 
-        // Search Query filter
-        if (this.searchQuery) {
-          const matchTitle = item.title.toLowerCase().includes(this.searchQuery);
-          const matchPrompt = item.promptText.toLowerCase().includes(this.searchQuery);
-          const matchCategory = item.category.toLowerCase().includes(this.searchQuery);
-          const matchModel = item.model.toLowerCase().includes(this.searchQuery);
-          const matchTags = item.tags && item.tags.some((t) => t.toLowerCase().includes(this.searchQuery));
+      // Search Query filter
+      if (this.searchQuery) {
+        const q = this.searchQuery;
+        const matchTitle = item.title && item.title.toLowerCase().includes(q);
+        const matchPrompt = item.promptText && item.promptText.toLowerCase().includes(q);
+        const matchCategory = item.category && item.category.toLowerCase().includes(q);
+        const matchModel = item.model && item.model.toLowerCase().includes(q);
+        const matchTags = item.tags && item.tags.some((t) => t.toLowerCase().includes(q));
 
-          return matchTitle || matchPrompt || matchCategory || matchModel || matchTags;
-        }
+        return matchTitle || matchPrompt || matchCategory || matchModel || matchTags;
+      }
 
-        return true;
-      })
-      .sort((a, b) => {
-        if (this.sortBy === "popular") {
-          return b.copies - a.copies;
-        }
-        if (this.sortBy === "likes") {
-          return b.likes - a.likes;
-        }
-        if (this.sortBy === "newest") {
-          return new Date(b.date || 0) - new Date(a.date || 0);
-        }
-        return 0;
-      });
+      return true;
+    });
+
+    if (this.sortBy === "random") {
+      return this.shuffleArray(list);
+    }
+    if (this.sortBy === "popular") {
+      return list.sort((a, b) => (b.copies || 0) - (a.copies || 0));
+    }
+    if (this.sortBy === "likes") {
+      return list.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+    }
+    if (this.sortBy === "newest") {
+      return list.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    }
+    return list;
   }
 
   applyFilterAndRender() {
@@ -596,49 +684,54 @@ class PicturePromptApp {
       bing: "Bing",
       flux: "FLUX.1"
     };
-    const displayModel = modelNameMap[item.model] || item.model.toUpperCase();
+    const displayModel = modelNameMap[item.model] || (item.model ? item.model.toUpperCase() : "AI");
+    const promptUrl = `prompt.html?p=${encodeURIComponent(item.slug || item.id)}`;
 
     return `
       <article class="prompt-card" data-domid="${domId}" data-id="${item.id}">
-        <div class="card-image-box" data-action="view">
-          <img 
-            src="${item.image}" 
-            alt="${item.title} - AI Photo Prompt" 
-            loading="lazy" 
-            referrerpolicy="no-referrer"
-            onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=700&q=80'"
-          >
+        <div class="card-image-box">
+          <a href="${promptUrl}" class="card-img-link" aria-label="${this.escapeHTML(item.title)}">
+            <img 
+              src="${item.image}" 
+              alt="${this.escapeHTML(item.title)} - AI Photo Prompt" 
+              loading="lazy" 
+              referrerpolicy="no-referrer"
+              onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=700&q=80'"
+            >
+          </a>
           <div class="card-badges-top">
             <span class="badge-tag badge-model">${displayModel}</span>
-            ${isSameFace ? '<span class="badge-tag badge-sameface"><i class="fa-solid fa-lock"></i> Same Face</span>' : `<span class="badge-tag">${item.aspectRatio}</span>`}
+            ${isSameFace ? '<span class="badge-tag badge-sameface"><i class="fa-solid fa-lock"></i> Same Face</span>' : `<span class="badge-tag">${item.aspectRatio || "9:16"}</span>`}
           </div>
           <div class="card-hover-overlay">
-            <button class="view-full-btn" data-action="view">
+            <a href="${promptUrl}" class="view-full-btn">
               <i class="fa-regular fa-eye"></i> View Full Prompt
-            </button>
+            </a>
           </div>
         </div>
 
         <div class="card-content">
-          <h3 class="card-title" data-action="view">${item.title}</h3>
+          <h3 class="card-title">
+            <a href="${promptUrl}">${this.escapeHTML(item.title)}</a>
+          </h3>
           <p class="card-prompt-snippet">${this.escapeHTML(item.promptText)}</p>
 
           <div class="card-footer-meta">
             <div class="card-stats">
-              <span title="${item.copies} total copies"><i class="fa-regular fa-copy"></i> <span class="copies-count">${item.copies}</span></span>
-              <span title="${item.likes} total likes"><i class="fa-regular fa-heart"></i> <span class="likes-count">${item.likes}</span></span>
+              <span title="${item.copies || 0} total copies"><i class="fa-regular fa-copy"></i> <span class="copies-count">${item.copies || 0}</span></span>
+              <span title="${item.likes || 0} total likes"><i class="fa-regular fa-heart"></i> <span class="likes-count">${item.likes || 0}</span></span>
             </div>
 
             <div class="card-actions">
-              <button class="icon-action-btn ${isLiked ? 'active-like' : ''}" data-action="like" title="Like prompt" aria-label="Like prompt">
+              <button type="button" class="icon-action-btn ${isLiked ? 'active-like' : ''}" data-action="like" title="Like prompt" aria-label="Like prompt">
                 <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
               </button>
 
-              <button class="icon-action-btn ${isSaved ? 'active-saved' : ''}" data-action="save" title="Save bookmark" aria-label="Save prompt">
+              <button type="button" class="icon-action-btn ${isSaved ? 'active-saved' : ''}" data-action="save" title="Save bookmark" aria-label="Save prompt">
                 <i class="${isSaved ? 'fa-solid' : 'fa-regular'} fa-bookmark"></i>
               </button>
 
-              <button class="copy-card-btn" data-action="copy" title="Copy prompt to clipboard">
+              <button type="button" class="copy-card-btn" data-action="copy" title="Copy prompt to clipboard">
                 <i class="fa-solid fa-copy"></i> Copy
               </button>
             </div>
@@ -654,13 +747,17 @@ class PicturePromptApp {
       if (!actionEl) return;
       const action = actionEl.getAttribute("data-action");
 
-      if (action === "view") {
-        this.openDetailModal(item);
-      } else if (action === "copy") {
+      if (action === "copy") {
+        e.preventDefault();
+        e.stopPropagation();
         this.copyPromptText(item.promptText, item.id);
       } else if (action === "like") {
+        e.preventDefault();
+        e.stopPropagation();
         this.toggleLike(item, card);
       } else if (action === "save") {
+        e.preventDefault();
+        e.stopPropagation();
         this.toggleSave(item, card);
       }
     });

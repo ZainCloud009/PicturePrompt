@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -123,18 +123,27 @@
     </div>
   </aside>
 
-  <!-- Main Navigation Header -->
+  <!-- Main Navigation Header (Competitor Style) -->
   <header class="site-header">
     <div class="container header-inner">
       <div class="header-left">
-        <a href="https://pictureprompt.world/" class="brand-logo" aria-label="Picture Prompt Home">
+        <a href="index.html" class="brand-logo" aria-label="Picture Prompt Home">
           <img src="logo.jpg" alt="Picture Prompt Logo" class="brand-logo-img">
           <div class="logo-text">
             <span class="brand-title">Picture Prompt</span>
-            <span class="brand-tagline">Unlimited AI Photo Prompts</span>
+            <span class="brand-tagline">AI Photo Prompts Library</span>
           </div>
         </a>
       </div>
+
+      <!-- Center Nav Links -->
+      <nav class="header-nav" aria-label="Primary Navigation">
+        <a href="index.html" class="nav-link active"><i class="fa-solid fa-house"></i> Home</a>
+        <a href="#categoryNav" class="nav-link"><i class="fa-solid fa-border-all"></i> Categories</a>
+        <a href="blog.html" class="nav-link"><i class="fa-solid fa-newspaper"></i> Blog</a>
+        <a href="#customizerSection" class="nav-link"><i class="fa-solid fa-sliders"></i> Customizer</a>
+        <a href="#saved" class="nav-link" id="navSavedLink"><i class="fa-solid fa-bookmark"></i> Saved (<span id="savedCountNav">0</span>)</a>
+      </nav>
 
       <div class="header-center">
         <div class="search-wrapper">
@@ -151,14 +160,9 @@
       </div>
 
       <div class="header-right">
-        <button id="customizerBtn" class="btn btn-outline" title="Custom Prompt Builder" aria-label="Prompt Customizer">
-          <i class="fa-solid fa-sliders"></i>
-          <span class="btn-text">Customizer</span>
-        </button>
-
-        <button id="favoritesBtn" class="btn btn-outline" title="View Saved Prompts" aria-label="Saved Prompts">
-          <i class="fa-solid fa-bookmark"></i>
-          <span class="btn-text">Saved</span> <span class="badge-saved-count">(<span id="savedCount">0</span>)</span>
+        <!-- Theme Toggle -->
+        <button id="themeToggleBtn" class="btn btn-icon theme-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <i class="fa-solid fa-moon theme-icon"></i>
         </button>
 
         <button id="addPromptBtn" class="btn btn-primary" title="Submit Prompt" aria-label="Add New Prompt">
@@ -261,9 +265,10 @@
         <div class="sort-wrapper">
           <label for="sortSelect" class="filter-label">Sort:</label>
           <select id="sortSelect" class="select-dropdown" aria-label="Sort Prompts">
-            <option value="popular">Most Popular (Copies)</option>
-            <option value="newest">Newest First</option>
-            <option value="likes">Most Liked</option>
+            <option value="random" selected>🎲 Fresh / Random Shuffle</option>
+            <option value="popular">🔥 Most Popular (Copies)</option>
+            <option value="likes">❤️ Most Liked</option>
+            <option value="newest">⏱️ Newest Added</option>
           </select>
         </div>
       </div>
@@ -488,8 +493,10 @@
         </div>
 
         <div class="footer-links-group">
-          <h4>Legal & Policies</h4>
+          <h4>Explore & Legal</h4>
           <ul>
+            <li><a href="blog.html">Blog & AI Guides</a></li>
+            <li><a href="#customizerSection">AI Prompt Customizer</a></li>
             <li><a href="#about" id="aboutLink">About Picture Prompt</a></li>
             <li><a href="#privacy" id="privacyLink">Privacy Policy</a></li>
             <li><a href="#terms" id="termsLink">Terms of Service</a></li>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting... | Picture Prompt</title>
+  
+  <script>
+    // GitHub Pages SPA Path Router for /prompt/<slug>
+    (function() {
+      var path = window.location.pathname;
+      var search = window.location.search;
+      var hash = window.location.hash;
+
+      // Check if URL is /prompt/something
+      var match = path.match(/\/prompt\/([^/]+)/);
+      if (match && match[1]) {
+        var slug = match[1].replace(".html", "");
+        window.location.replace("/prompt.html?p=" + encodeURIComponent(slug));
+        return;
+      }
+
+      // Check if URL is /blog/something
+      var blogMatch = path.match(/\/blog\/([^/]+)/);
+      if (blogMatch && blogMatch[1]) {
+        var blogSlug = blogMatch[1].replace(".html", "");
+        window.location.replace("/blog.html?post=" + encodeURIComponent(blogSlug));
+        return;
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 2rem;">
+  <div style="max-width: 500px;">
+    <h1 style="font-size: 4rem; margin-bottom: 1rem; color: #6366f1;">404</h1>
+    <h2 style="margin-bottom: 1rem; font-size: 1.5rem;">Page Not Found</h2>
+    <p style="color: #64748b; margin-bottom: 2rem;">The prompt or page you are looking for may have moved or doesn't exist.</p>
+    <a href="/index.html" style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; text-decoration: none; border-radius: 9999px; font-weight: 600;">Back to All Prompts</a>
+  </div>
+</body>
+</html>
