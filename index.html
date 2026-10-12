@@ -291,6 +291,14 @@
         <!-- Rendered dynamically by app.js -->
       </div>
 
+      <!-- Load More Prompts Action Button (Tap or Scroll) -->
+      <div class="load-more-container" id="loadMoreContainer">
+        <button id="loadMoreBtn" class="btn btn-primary btn-load-more" aria-label="Load More Prompts">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>Load More Prompts (<span id="loadMoreRemaining">900+</span> Remaining)</span>
+        </button>
+      </div>
+
       <!-- Infinite Scroll Sentinel & Loader -->
       <div id="scrollLoader" class="scroll-loader" style="display: none;">
         <div class="loader-spinner"></div>

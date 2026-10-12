@@ -77,7 +77,8 @@ class PicturePromptApp {
     this.allPrompts = [];
     this.filteredList = [];
     this.renderedCount = 0;
-    this.pageSize = 24;
+    this.initialBatchSize = 48;
+    this.pageSize = 36;
     this.isLoadingMore = false;
     this.loopCycle = 0;
 
@@ -222,9 +223,12 @@ class PicturePromptApp {
     this.addPromptBtn = document.getElementById("addPromptBtn");
     this.customizerBtn = document.getElementById("customizerBtn");
 
-    // Infinite Scroll
+    // Infinite Scroll & Load More
     this.scrollSentinel = document.getElementById("scrollSentinel");
     this.scrollLoader = document.getElementById("scrollLoader");
+    this.loadMoreBtn = document.getElementById("loadMoreBtn");
+    this.loadMoreContainer = document.getElementById("loadMoreContainer");
+    this.loadMoreRemaining = document.getElementById("loadMoreRemaining");
 
     // Modals
     this.detailModal = document.getElementById("promptDetailModal");
@@ -340,6 +344,13 @@ class PicturePromptApp {
     document.getElementById("resetFiltersBtn").addEventListener("click", () => {
       this.resetAllFilters();
     });
+
+    // Load More Prompts Button (Tap to load 36 more)
+    if (this.loadMoreBtn) {
+      this.loadMoreBtn.addEventListener("click", () => {
+        this.loadNextBatch();
+      });
+    }
 
     // Add Prompt Modal triggers
     this.addPromptBtn.addEventListener("click", () => {
@@ -620,31 +631,38 @@ class PicturePromptApp {
     if (this.filteredList.length === 0) {
       this.emptyState.style.display = "block";
       this.scrollLoader.style.display = "none";
+      if (this.loadMoreContainer) this.loadMoreContainer.style.display = "none";
       this.visibleCountEl.textContent = "0";
       return;
     }
 
     this.emptyState.style.display = "none";
-    this.loadNextBatch();
+    if (this.loadMoreContainer) this.loadMoreContainer.style.display = "flex";
+    this.loadNextBatch(this.initialBatchSize);
   }
 
-  // Infinite Scroll Batch Loader
-  loadNextBatch() {
+  // Infinite Scroll & Load More Batch Loader
+  loadNextBatch(customSize = null) {
     if (this.isLoadingMore || this.filteredList.length === 0) return;
     this.isLoadingMore = true;
     this.scrollLoader.style.display = "flex";
+    if (this.loadMoreBtn) {
+      this.loadMoreBtn.classList.add("loading");
+    }
 
-    // Small timeout for super smooth 60fps rendering
+    const batchSize = customSize || this.pageSize;
+
+    // Fast and smooth 120ms rendering
     setTimeout(() => {
       const startIndex = this.renderedCount % this.filteredList.length;
       let nextBatch = [];
 
-      if (startIndex + this.pageSize <= this.filteredList.length) {
-        nextBatch = this.filteredList.slice(startIndex, startIndex + this.pageSize);
+      if (startIndex + batchSize <= this.filteredList.length) {
+        nextBatch = this.filteredList.slice(startIndex, startIndex + batchSize);
       } else {
         // If we reach the end of the filtered list, wrap around so the scroll never ends!
         const part1 = this.filteredList.slice(startIndex);
-        const remainder = this.pageSize - part1.length;
+        const remainder = batchSize - part1.length;
         const part2 = this.filteredList.slice(0, remainder);
         nextBatch = [...part1, ...part2];
         this.loopCycle++;
@@ -665,11 +683,25 @@ class PicturePromptApp {
       this.renderedCount += nextBatch.length;
 
       // Update visible count in meta bar
-      this.visibleCountEl.textContent = `${this.renderedCount} of ${this.allPrompts.length}+`;
+      const totalAvailable = this.filteredList.length;
+      this.visibleCountEl.textContent = `${Math.min(this.renderedCount, totalAvailable)} of ${totalAvailable}`;
+
+      // Update Load More Button remaining count
+      if (this.loadMoreRemaining) {
+        const remaining = Math.max(0, totalAvailable - this.renderedCount);
+        if (remaining > 0) {
+          this.loadMoreRemaining.textContent = `${remaining}`;
+        } else {
+          this.loadMoreRemaining.textContent = "More";
+        }
+      }
 
       this.isLoadingMore = false;
       this.scrollLoader.style.display = "none";
-    }, 180);
+      if (this.loadMoreBtn) {
+        this.loadMoreBtn.classList.remove("loading");
+      }
+    }, 120);
   }
 
   createCardHTML(item, domId) {
